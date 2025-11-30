@@ -1,0 +1,12 @@
+[project]
+name = "terminal-bench-pixiu-adapter"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "datasets==4.4.1",
+    "tqdm>=4.64,<5",
+]
+
+[tool.uv]
+dev-dependencies = []
+
