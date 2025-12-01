@@ -1,0 +1,27 @@
+[
+    {
+        "adapter_name": "pixiu-flare-headlines",
+        "agent": "terminus",
+        "model": "hf-causal:sshleifer/tiny-gpt2",
+        "date": "2025-11-26",
+        "notes": "PIXIU flare_headlines, 5 samples",
+        "benchmark_reference": "PIXIU src/eval.py",
+        "metrics": [
+            {
+                "benchmark_name": "PIXIU Native Harness",
+                "metric_name": "avg_f1",
+                "value": 0.40,
+                "std_error": 0.0
+            },
+            {
+                "benchmark_name": "Terminal-Bench Adapter",
+                "metric_name": "avg_f1",
+                "value": 0.40,
+                "std_error": 0.0
+            }
+        ]
+    }
+]
+
+
+
