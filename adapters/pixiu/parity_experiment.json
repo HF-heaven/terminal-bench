@@ -20,6 +20,38 @@
                 "std_error": 0.0
             }
         ]
+    },
+    {
+        "adapter_name": "pixiu-flare-headlines",
+        "agent": "oracle",
+        "model": "ground-truth",
+        "date": "2025-11-30",
+        "notes": "Oracle agent verification: all 20,547 flare-headlines tasks",
+        "benchmark_reference": "Terminal-Bench oracle agent with solution.sh",
+        "metrics": [
+            {
+                "benchmark_name": "Terminal-Bench Adapter",
+                "metric_name": "accuracy",
+                "value": 1.0,
+                "std_error": 0.0
+            }
+        ]
+    },
+    {
+        "adapter_name": "pixiu-en-fpb",
+        "agent": "oracle",
+        "model": "ground-truth",
+        "date": "2025-11-30",
+        "notes": "Oracle agent verification: all 970 en-fpb tasks",
+        "benchmark_reference": "Terminal-Bench oracle agent with solution.sh",
+        "metrics": [
+            {
+                "benchmark_name": "Terminal-Bench Adapter",
+                "metric_name": "accuracy",
+                "value": 1.0,
+                "std_error": 0.0
+            }
+        ]
     }
 ]
 
