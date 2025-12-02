@@ -5,6 +5,9 @@ This adapter converts PIXIU's FinBen classification samples into Terminal-Bench
 tasks. Supports multiple PIXIU datasets:
 - flare-headlines: Financial news headline classification
 - en-fpb: Financial PhraseBank sentiment analysis
+- flare-causal20-sc: Financial causal relationship classification
+- flare-fiqasa: Financial sentiment analysis (FiQA SA)
+- finben-fomc: FOMC hawkish/dovish classification
 """
 
 from __future__ import annotations
@@ -73,15 +76,22 @@ class PixiuAdapter:
     def iter_records(self) -> Iterable[PixiuRecord]:
         """Iterate over dataset records, handling different dataset formats."""
         for idx, row in enumerate(self.dataset):
-            # Detect dataset format
-            if self._is_fpb_format(row):
+            # Detect dataset format based on dataset name
+            if "en-fpb" in self.dataset_name:
                 yield self._parse_fpb_record(row, idx)
+            elif "causal20" in self.dataset_name:
+                yield self._parse_causal20_record(row)
+            elif "fiqasa" in self.dataset_name:
+                yield self._parse_fiqasa_record(row)
+            elif "fomc" in self.dataset_name:
+                yield self._parse_fomc_record(row)
             else:
+                # Default: headlines format
                 yield self._parse_headlines_record(row)
     
     def _is_fpb_format(self, row: Dict[str, Any]) -> bool:
         """Check if this is an FPB-format record."""
-        return "text" in row or "sentence" in row and "answer" in row
+        return "en-fpb" in self.dataset_name
     
     def _parse_headlines_record(self, row: Dict[str, Any]) -> PixiuRecord:
         """Parse flare-headlines format record."""
@@ -91,6 +101,39 @@ class PixiuAdapter:
             choices=row["choices"],
             gold_index=int(row["gold"]),
             label_type=row.get("label_type", "financial classification"),
+        )
+    
+    def _parse_causal20_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-causal20-sc format record."""
+        # causal20-sc has same structure as headlines but different task type
+        return PixiuRecord(
+            pixiu_id=row["id"],
+            query=row["query"],
+            choices=row["choices"],
+            gold_index=int(row["gold"]),
+            label_type="causal relationship",
+        )
+    
+    def _parse_fiqasa_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-fiqasa format record."""
+        # fiqasa has same structure as headlines but different task type
+        return PixiuRecord(
+            pixiu_id=row["id"],
+            query=row["query"],
+            choices=row["choices"],
+            gold_index=int(row["gold"]),
+            label_type="sentiment",
+        )
+    
+    def _parse_fomc_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse finben-fomc format record."""
+        # fomc has same structure as headlines but different task type
+        return PixiuRecord(
+            pixiu_id=row["id"],
+            query=row["query"],
+            choices=row["choices"],
+            gold_index=int(row["gold"]),
+            label_type="monetary policy stance",
         )
     
     def _parse_fpb_record(self, row: Dict[str, Any], idx: int) -> PixiuRecord:
@@ -192,5 +235,11 @@ class PixiuAdapter:
         """Generate Terminal-Bench task ID based on dataset."""
         if "fpb" in self.dataset_name.lower():
             return f"pixiu-fpb-{pixiu_id.lower()}"
+        elif "causal20" in self.dataset_name.lower():
+            return f"pixiu-causal20sc-{pixiu_id.lower()}"
+        elif "fiqasa" in self.dataset_name.lower():
+            return f"pixiu-fiqasa-{pixiu_id.lower()}"
+        elif "fomc" in self.dataset_name.lower():
+            return f"pixiu-fomc-{pixiu_id.lower()}"
         else:
             return f"pixiu-headlines-{pixiu_id.lower()}"
