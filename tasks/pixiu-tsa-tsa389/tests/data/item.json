@@ -1,0 +1,12 @@
+{
+  "id": "tsa389",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Barclays share price: Chairman 'perfectly comfortable' with ring-fencing rules\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

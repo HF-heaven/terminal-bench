@@ -1,0 +1,12 @@
+{
+  "id": "tsa368",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Jim Armitage: Amazon is Primed to deliver pain to grocery's old guard\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

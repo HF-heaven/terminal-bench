@@ -1,0 +1,12 @@
+{
+  "id": "tsa509",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Industry NewsStandard Life enjoys strong inflows to lift assets under management\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

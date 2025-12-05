@@ -1,0 +1,12 @@
+{
+  "id": "tsa0",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Ashtead to buy back shares, full-year profit beats estimates\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

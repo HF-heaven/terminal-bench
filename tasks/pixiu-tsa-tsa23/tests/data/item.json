@@ -1,0 +1,12 @@
+{
+  "id": "tsa23",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: The Coca-Cola Company and Coca-Cola FEMSA to Acquire AdeS Soy-Based Beverage Business From Unilever\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

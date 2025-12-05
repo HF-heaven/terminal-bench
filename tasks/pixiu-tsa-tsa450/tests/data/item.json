@@ -1,0 +1,12 @@
+{
+  "id": "tsa450",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Barclays shares dive as plan for ring-fencing costs extra Â£1 billion\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

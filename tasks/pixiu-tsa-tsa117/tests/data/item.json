@@ -1,0 +1,12 @@
+{
+  "id": "tsa117",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: MarketsShire up 2.5% and Baxalta up 6% on $32bn deal\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

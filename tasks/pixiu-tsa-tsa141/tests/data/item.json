@@ -1,0 +1,12 @@
+{
+  "id": "tsa141",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Eli Lilly & Co. (LLY) Has Broken Out To A New High On AstraZeneca Collaboration\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

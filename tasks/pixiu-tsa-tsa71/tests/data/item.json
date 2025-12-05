@@ -1,0 +1,12 @@
+{
+  "id": "tsa71",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: UPDATE 3-SABMiller rejects 'informal' offer from AB InBev as too low - Bloomberg\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

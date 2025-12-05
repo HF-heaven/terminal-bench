@@ -8,6 +8,11 @@ tasks. Supports multiple PIXIU datasets:
 - flare-causal20-sc: Financial causal relationship classification
 - flare-fiqasa: Financial sentiment analysis (FiQA SA)
 - finben-fomc: FOMC hawkish/dovish classification
+- flare-tsa: SemEval-2017 Task 5 fine-grained sentiment (discretized to 3 classes)
+- flare-cfa: CFA exam questions classification
+- flare-finqa: Financial numerical reasoning (exact number matching)
+- flare-tatqa: Table-based question answering (text generation)
+- flare-fnxl: Financial token classification/NER (text generation)
 """
 
 from __future__ import annotations
@@ -85,6 +90,22 @@ class PixiuAdapter:
                 yield self._parse_fiqasa_record(row)
             elif "fomc" in self.dataset_name:
                 yield self._parse_fomc_record(row)
+            elif "tsa" in self.dataset_name:
+                yield self._parse_tsa_record(row)
+            elif "cfa" in self.dataset_name:
+                yield self._parse_cfa_record(row, idx)
+            elif "finqa" in self.dataset_name:
+                yield self._parse_finqa_record(row)
+            elif "tatqa" in self.dataset_name:
+                yield self._parse_tatqa_record(row)
+            elif "fnxl" in self.dataset_name:
+                yield self._parse_fnxl_record(row)
+            elif "fsrl" in self.dataset_name:
+                yield self._parse_fsrl_record(row)
+            elif "ectsum" in self.dataset_name:
+                yield self._parse_ectsum_record(row)
+            elif "edtsum" in self.dataset_name:
+                yield self._parse_edtsum_record(row)
             else:
                 # Default: headlines format
                 yield self._parse_headlines_record(row)
@@ -134,6 +155,158 @@ class PixiuAdapter:
             choices=row["choices"],
             gold_index=int(row["gold"]),
             label_type="monetary policy stance",
+        )
+    
+    def _parse_tsa_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-tsa format record.
+        
+        TSA uses continuous sentiment scores from -1 to 1.
+        We discretize them into three categories:
+        - negative: score < -0.33
+        - neutral: -0.33 <= score <= 0.33
+        - positive: score > 0.33
+        """
+        tsa_id = row["id"]
+        score = float(row["answer"])
+        text = row["text"]
+        
+        # Discretize continuous score into three categories
+        choices = ["negative", "neutral", "positive"]
+        if score < -0.33:
+            gold_index = 0  # negative
+        elif score <= 0.33:
+            gold_index = 1  # neutral
+        else:
+            gold_index = 2  # positive
+        
+        # Create query from the text
+        query = (
+            f"Analyze the sentiment of the following financial text. "
+            f"Classify it as negative, neutral, or positive.\n"
+            f"Text: {text}\nAnswer:"
+        )
+        
+        return PixiuRecord(
+            pixiu_id=tsa_id,
+            query=query,
+            choices=choices,
+            gold_index=gold_index,
+            label_type="sentiment",
+        )
+    
+    def _parse_cfa_record(self, row: Dict[str, Any], idx: int) -> PixiuRecord:
+        """Parse flare-cfa format record.
+        
+        CFA contains CFA exam multiple choice questions.
+        """
+        # Generate ID from index since the dataset doesn't have explicit IDs
+        cfa_id = f"cfa{idx}"
+        
+        return PixiuRecord(
+            pixiu_id=cfa_id,
+            query=row["query"] + "\n" + row["text"],
+            choices=row["choices"],
+            gold_index=int(row["gold"]),
+            label_type="answer choice",
+        )
+    
+    def _parse_finqa_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-finqa format record.
+        
+        FinQA requires numerical answers. We treat the answer as a single "choice".
+        """
+        finqa_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=finqa_id,
+            query=row["query"] + "\nContext: " + row["text"],
+            choices=[answer],  # Single "choice" - the numerical answer
+            gold_index=0,
+            label_type="numerical answer",
+        )
+    
+    def _parse_tatqa_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-tatqa format record.
+        
+        TATQA requires text answers. We treat the answer as a single "choice".
+        """
+        tatqa_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=tatqa_id,
+            query=row["query"] + "\nContext: " + row["text"],
+            choices=[answer],  # Single "choice" - the text answer
+            gold_index=0,
+            label_type="text answer",
+        )
+    
+    def _parse_fnxl_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-fnxl format record.
+        
+        FNXL requires token-level label sequences. We treat the answer as a single "choice".
+        """
+        fnxl_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=fnxl_id,
+            query=row["query"] + "\nText: " + row["text"],
+            choices=[answer],  # Single "choice" - the token sequence
+            gold_index=0,
+            label_type="token labels",
+        )
+    
+    def _parse_fsrl_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-fsrl format record.
+        
+        FSRL (Financial Semantic Role Labeling) requires token-level semantic role labels.
+        Format is similar to FNXL with token:label pairs.
+        """
+        fsrl_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=fsrl_id,
+            query=row["query"] + "\nText: " + row["text"],
+            choices=[answer],  # Single "choice" - the token sequence
+            gold_index=0,
+            label_type="semantic role labels",
+        )
+    
+    def _parse_ectsum_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-ectsum format record.
+        
+        ECTSUM is extractive summarization with binary labels (0/1) for each sentence.
+        The answer is a newline-separated sequence of 0s and 1s.
+        """
+        ectsum_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=ectsum_id,
+            query=row["query"] + "\nText: " + row["text"],
+            choices=[answer],  # Single "choice" - the binary label sequence
+            gold_index=0,
+            label_type="extractive summary labels",
+        )
+    
+    def _parse_edtsum_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse flare-edtsum format record.
+        
+        EDTSUM is abstractive summarization - generate a summary of the input text.
+        The answer is free-form text.
+        """
+        edtsum_id = row["id"]
+        answer = str(row["answer"]).strip()
+        
+        return PixiuRecord(
+            pixiu_id=edtsum_id,
+            query=row["query"] + "\nText: " + row["text"],
+            choices=[answer],  # Single "choice" - the summary text
+            gold_index=0,
+            label_type="abstractive summary",
         )
     
     def _parse_fpb_record(self, row: Dict[str, Any], idx: int) -> PixiuRecord:
@@ -202,10 +375,12 @@ class PixiuAdapter:
     def _update_task_yaml(self, out_dir: Path, record: PixiuRecord) -> None:
         path = out_dir / "task.yaml"
         content = path.read_text()
+        # Replace newlines in choices with | separator to avoid YAML parsing issues
+        choices_safe = [choice.replace("\n", " | ") for choice in record.choices]
         replacements = {
             "{pixiu_id}": record.pixiu_id,
             "{label_type}": record.label_type,
-            "{choices_inline}": ", ".join(record.choices),
+            "{choices_inline}": ", ".join(choices_safe),
             "{difficulty}": "medium",
         }
         for key, value in replacements.items():
@@ -214,14 +389,23 @@ class PixiuAdapter:
 
     def _update_solution(self, out_dir: Path, record: PixiuRecord) -> None:
         path = out_dir / "solution.sh"
+        # Escape special bash characters to prevent interpretation
+        # Order matters: escape backslashes first, then quotes, then dollar signs
+        escaped_label = record.expected_label.replace("\\", "\\\\")
+        escaped_label = escaped_label.replace('"', '\\"')
+        escaped_label = escaped_label.replace("$", "\\$")
+        escaped_label = escaped_label.replace("`", "\\`")
         path.write_text(
-            path.read_text().replace("{expected_label}", record.expected_label)
+            path.read_text().replace("{expected_label}", escaped_label)
         )
 
     def _update_tests(self, out_dir: Path, record: PixiuRecord) -> None:
         path = out_dir / "tests" / "test_outputs.py"
+        # Use json.dumps() to properly escape the expected label for Python string literal
+        # json.dumps() adds quotes and escapes internal quotes, newlines, etc.
+        escaped_label = json.dumps(record.expected_label)[1:-1]
         replacements = {
-            "{expected_label}": record.expected_label,
+            "{expected_label}": escaped_label,
             "{allowed_choices}": json.dumps(list(record.choices), ensure_ascii=False),
             "{pixiu_id}": record.pixiu_id,
             "{label_type}": record.label_type,
@@ -241,5 +425,21 @@ class PixiuAdapter:
             return f"pixiu-fiqasa-{pixiu_id.lower()}"
         elif "fomc" in self.dataset_name.lower():
             return f"pixiu-fomc-{pixiu_id.lower()}"
+        elif "tsa" in self.dataset_name.lower():
+            return f"pixiu-tsa-{pixiu_id.lower()}"
+        elif "cfa" in self.dataset_name.lower():
+            return f"pixiu-cfa-{pixiu_id.lower()}"
+        elif "finqa" in self.dataset_name.lower():
+            return f"pixiu-finqa-{pixiu_id.lower()}"
+        elif "tatqa" in self.dataset_name.lower():
+            return f"pixiu-tatqa-{pixiu_id.lower()}"
+        elif "fnxl" in self.dataset_name.lower():
+            return f"pixiu-fnxl-{pixiu_id.lower()}"
+        elif "fsrl" in self.dataset_name.lower():
+            return f"pixiu-fsrl-{pixiu_id.lower()}"
+        elif "ectsum" in self.dataset_name.lower():
+            return f"pixiu-ectsum-{pixiu_id.lower()}"
+        elif "edtsum" in self.dataset_name.lower():
+            return f"pixiu-edtsum-{pixiu_id.lower()}"
         else:
             return f"pixiu-headlines-{pixiu_id.lower()}"

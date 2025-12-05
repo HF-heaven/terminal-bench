@@ -1,0 +1,12 @@
+{
+  "id": "tsa189",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: REFILE-UPDATE 4-Britain's Lloyds to pay first dividend since rescue\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

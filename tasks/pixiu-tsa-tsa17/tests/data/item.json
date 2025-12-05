@@ -1,0 +1,12 @@
+{
+  "id": "tsa17",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Homebuilders, Shire Gains Spur FTSE 100 to Rally Beyond Record\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

@@ -31,7 +31,8 @@ def parse_args() -> argparse.Namespace:
         default="TheFinAI/flare-headlines",
         help="Hugging Face dataset identifier to load. Supported: "
              "TheFinAI/flare-headlines, TheFinAI/en-fpb, TheFinAI/flare-causal20-sc, "
-             "TheFinAI/flare-fiqasa, TheFinAI/finben-fomc",
+             "TheFinAI/flare-fiqasa, TheFinAI/finben-fomc, TheFinAI/flare-tsa, "
+             "TheFinAI/flare-cfa",
     )
     return parser.parse_args()
 
