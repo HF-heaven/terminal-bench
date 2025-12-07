@@ -1,33 +1,49 @@
 """
 PIXIU → Terminal-Bench adapter.
 
-This adapter converts PIXIU's FinBen classification samples into Terminal-Bench
-tasks. Supports multiple PIXIU datasets:
-- flare-headlines: Financial news headline classification
-- en-fpb: Financial PhraseBank sentiment analysis
-- flare-causal20-sc: Financial causal relationship classification
-- flare-fiqasa: Financial sentiment analysis (FiQA SA)
-- finben-fomc: FOMC hawkish/dovish classification
-- flare-tsa: Targeted sentiment analysis (regression)
-- flare-cfa: CFA exam questions classification
-- flare-finqa: Financial numerical reasoning (exact number matching)
-- flare-tatqa: Table-based question answering (text generation)
-- flare-fnxl: Financial token classification/NER (text generation)
-- flare-fsrl: Financial semantic role labeling
-- flare-ectsum: Extractive summarization
-- flare-edtsum: Abstractive summarization
-- flare-german: German credit scoring
-- cra-ccfraud: Credit card fraud detection
-- flare-australian: Australian credit classification
-- cra-ccf: Credit card fraud detection (binary)
-- cra-taiwan: Taiwan bankruptcy prediction
-- en-forecasting-travelinsurance: Travel insurance claim prediction
-- flare-mlesg: ESG multi-label classification
-- flare-ma: M&A deal classification
-- flare-multifin-en: Multi-class financial headline classification
-- flare-sm-acl: Stock movement prediction
-- flare-sm-bigdata: Stock movement prediction
-- flare-sm-cikm: Stock movement prediction
+This adapter converts PIXIU's FinBen samples into Terminal-Bench tasks.
+Supports 29 PIXIU datasets:
+
+Classification tasks:
+1. flare-headlines: Financial news headline classification
+2. en-fpb: Financial PhraseBank sentiment analysis
+3. flare-causal20-sc: Financial causal relationship classification
+4. flare-fiqasa: Financial sentiment analysis (FiQA SA)
+5. finben-fomc: FOMC hawkish/dovish classification
+6. flare-cfa: CFA exam questions classification
+7. flare-german: German credit scoring
+8. cra-ccfraud: Credit card fraud detection
+9. flare-australian: Australian credit classification
+10. cra-ccf: Credit card fraud detection (binary)
+11. taiwan: Taiwan bankruptcy prediction
+12. en-forecasting-travelinsurance: Travel insurance claim prediction
+13. flare-mlesg: ESG multi-label classification
+14. flare-ma: M&A deal classification
+15. flare-multifin-en: Multi-class financial headline classification
+16. flare-sm-acl: Stock movement prediction
+17. flare-sm-bigdata: Stock movement prediction
+18. flare-sm-cikm: Stock movement prediction
+
+Regression tasks:
+19. flare-tsa: Targeted sentiment analysis (regression)
+
+Text generation tasks:
+20. flare-finqa: Financial numerical reasoning (exact number matching)
+21. flare-tatqa: Table-based question answering
+
+Sequence labeling tasks:
+22. flare-fnxl: Financial token classification/NER
+23. flare-ner: Named entity recognition
+24. finben-finer-ord: Financial entity recognition
+
+Relation extraction tasks:
+25. flare-finred: Financial relation extraction
+26. flare-cd: Causal detection
+27. flare-fsrl: Financial semantic role labeling
+
+Summarization tasks:
+28. flare-ectsum: Extractive summarization
+29. flare-edtsum: Abstractive summarization
 """
 
 from __future__ import annotations
@@ -187,8 +203,6 @@ class PixiuAdapter:
                 yield self._parse_smbigdata_record(row)
             elif "sm-cikm" in self.dataset_name.lower():
                 yield self._parse_smcikm_record(row)
-            elif "cra-taiwan" in self.dataset_name.lower():
-                yield self._parse_cra_taiwan_record(row)
             else:
                 # Default: headlines format
                 yield self._parse_headlines_record(row)
@@ -276,16 +290,6 @@ class PixiuAdapter:
             choices=row["choices"],
             gold_index=int(row["gold"]),
             label_type="stock movement prediction",
-        )
-    
-    def _parse_cra_taiwan_record(self, row: Dict[str, Any]) -> PixiuRecord:
-        """Parse daishen/cra-taiwan format record (bankruptcy prediction)."""
-        return PixiuRecord(
-            pixiu_id=str(row["id"]),
-            query=row["query"],
-            choices=row["choices"],
-            gold_index=int(row["gold"]),
-            label_type="bankruptcy prediction",
         )
     
     def _parse_fiqasa_record(self, row: Dict[str, Any]) -> PixiuRecord:
@@ -834,7 +838,5 @@ class PixiuAdapter:
             return f"pixiu-smbigdata-{pixiu_id.lower()}"
         elif "sm-cikm" in self.dataset_name.lower():
             return f"pixiu-smcikm-{pixiu_id.lower()}"
-        elif "cra-taiwan" in self.dataset_name.lower():
-            return f"pixiu-craTW-{pixiu_id.lower()}"
         else:
             return f"pixiu-headlines-{pixiu_id.lower()}"
