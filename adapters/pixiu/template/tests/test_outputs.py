@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-EXPECTED_LABEL = "{expected_label}"
+EXPECTED_LABEL = {expected_label}
 ALLOWED_CHOICES = {allowed_choices}
 PIXIU_ID = "{pixiu_id}"
 LABEL_TYPE = "{label_type}"

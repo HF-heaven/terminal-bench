@@ -1,49 +1,33 @@
 """
 PIXIU → Terminal-Bench adapter.
 
-This adapter converts PIXIU's FinBen samples into Terminal-Bench tasks.
-Supports 29 PIXIU datasets:
-
-Classification tasks:
-1. flare-headlines: Financial news headline classification
-2. en-fpb: Financial PhraseBank sentiment analysis
-3. flare-causal20-sc: Financial causal relationship classification
-4. flare-fiqasa: Financial sentiment analysis (FiQA SA)
-5. finben-fomc: FOMC hawkish/dovish classification
-6. flare-cfa: CFA exam questions classification
-7. flare-german: German credit scoring
-8. cra-ccfraud: Credit card fraud detection
-9. flare-australian: Australian credit classification
-10. cra-ccf: Credit card fraud detection (binary)
-11. taiwan: Taiwan bankruptcy prediction
-12. en-forecasting-travelinsurance: Travel insurance claim prediction
-13. flare-mlesg: ESG multi-label classification
-14. flare-ma: M&A deal classification
-15. flare-multifin-en: Multi-class financial headline classification
-16. flare-sm-acl: Stock movement prediction
-17. flare-sm-bigdata: Stock movement prediction
-18. flare-sm-cikm: Stock movement prediction
-
-Regression tasks:
-19. flare-tsa: Targeted sentiment analysis (regression)
-
-Text generation tasks:
-20. flare-finqa: Financial numerical reasoning (exact number matching)
-21. flare-tatqa: Table-based question answering
-
-Sequence labeling tasks:
-22. flare-fnxl: Financial token classification/NER
-23. flare-ner: Named entity recognition
-24. finben-finer-ord: Financial entity recognition
-
-Relation extraction tasks:
-25. flare-finred: Financial relation extraction
-26. flare-cd: Causal detection
-27. flare-fsrl: Financial semantic role labeling
-
-Summarization tasks:
-28. flare-ectsum: Extractive summarization
-29. flare-edtsum: Abstractive summarization
+This adapter converts PIXIU's FinBen classification samples into Terminal-Bench
+tasks. Supports multiple PIXIU datasets:
+- flare-headlines: Financial news headline classification
+- en-fpb: Financial PhraseBank sentiment analysis
+- flare-causal20-sc: Financial causal relationship classification
+- flare-fiqasa: Financial sentiment analysis (FiQA SA)
+- finben-fomc: FOMC hawkish/dovish classification
+- flare-tsa: Targeted sentiment analysis (regression)
+- flare-cfa: CFA exam questions classification
+- flare-finqa: Financial numerical reasoning (exact number matching)
+- flare-tatqa: Table-based question answering (text generation)
+- flare-fnxl: Financial token classification/NER (text generation)
+- flare-fsrl: Financial semantic role labeling
+- flare-ectsum: Extractive summarization
+- flare-edtsum: Abstractive summarization
+- flare-german: German credit scoring
+- cra-ccfraud: Credit card fraud detection
+- flare-australian: Australian credit classification
+- cra-ccf: Credit card fraud detection (binary)
+- cra-taiwan: Taiwan bankruptcy prediction
+- en-forecasting-travelinsurance: Travel insurance claim prediction
+- flare-mlesg: ESG multi-label classification
+- flare-ma: M&A deal classification
+- flare-multifin-en: Multi-class financial headline classification
+- flare-sm-acl: Stock movement prediction
+- flare-sm-bigdata: Stock movement prediction
+- flare-sm-cikm: Stock movement prediction
 """
 
 from __future__ import annotations
@@ -57,8 +41,13 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 from datasets import Dataset, load_dataset
 from tqdm import tqdm
 
+# Terminal-Bench template directories (legacy)
 TEMPLATE_DIR = Path(__file__).parent / "template"
 TEMPLATE_REGRESSION_DIR = Path(__file__).parent / "template_regression"
+
+# Harbor template directories (only two: standard and regression)
+TEMPLATE_HARBOR_DIR = Path(__file__).parent / "template_harbor"
+TEMPLATE_HARBOR_REGRESSION_DIR = Path(__file__).parent / "template_harbor_regression"
 
 
 @dataclass(frozen=True)
@@ -110,7 +99,7 @@ class PixiuRecord:
 
 
 class PixiuAdapter:
-    """Adapter that materialises PIXIU FinBen samples as Terminal-Bench tasks."""
+    """Adapter that materialises PIXIU FinBen samples as Terminal-Bench or Harbor tasks."""
 
     def __init__(
         self,
@@ -118,11 +107,13 @@ class PixiuAdapter:
         split: str = "test",
         dataset_name: str = "TheFinAI/flare-headlines",
         limit: int | None = None,
+        use_harbor_format: bool = False,
     ) -> None:
         self.task_dir = Path(task_dir)
         self.dataset_name = dataset_name
         self.split = split
         self.limit = limit
+        self.use_harbor_format = use_harbor_format
         self.dataset = self._load_dataset()
 
     def _load_dataset(self) -> Dataset:
@@ -182,13 +173,19 @@ class PixiuAdapter:
             elif "german" in self.dataset_name:
                 yield self._parse_german_record(row, idx)
             elif "ccfraud" in self.dataset_name:
-                yield self._parse_ccfraud_record(row, idx)
+                record = self._parse_ccfraud_record(row, idx)
+                if record is not None:
+                    yield record
             elif "australian" in self.dataset_name:
                 yield self._parse_australian_record(row, idx)
             elif "ccf" in self.dataset_name:
-                yield self._parse_ccf_record(row, idx)
+                record = self._parse_ccf_record(row, idx)
+                if record is not None:
+                    yield record
             elif "taiwan" in self.dataset_name:
-                yield self._parse_taiwan_record(row, idx)
+                record = self._parse_taiwan_record(row, idx)
+                if record is not None:
+                    yield record
             elif "travelinsurance" in self.dataset_name:
                 yield self._parse_travelinsurance_record(row, idx)
             elif "mlesg" in self.dataset_name.lower():
@@ -203,6 +200,8 @@ class PixiuAdapter:
                 yield self._parse_smbigdata_record(row)
             elif "sm-cikm" in self.dataset_name.lower():
                 yield self._parse_smcikm_record(row)
+            elif "cra-taiwan" in self.dataset_name.lower():
+                yield self._parse_cra_taiwan_record(row)
             else:
                 # Default: headlines format
                 yield self._parse_headlines_record(row)
@@ -290,6 +289,16 @@ class PixiuAdapter:
             choices=row["choices"],
             gold_index=int(row["gold"]),
             label_type="stock movement prediction",
+        )
+    
+    def _parse_cra_taiwan_record(self, row: Dict[str, Any]) -> PixiuRecord:
+        """Parse daishen/cra-taiwan format record (bankruptcy prediction)."""
+        return PixiuRecord(
+            pixiu_id=str(row["id"]),
+            query=row["query"],
+            choices=row["choices"],
+            gold_index=int(row["gold"]),
+            label_type="bankruptcy prediction",
         )
     
     def _parse_fiqasa_record(self, row: Dict[str, Any]) -> PixiuRecord:
@@ -452,7 +461,11 @@ class PixiuAdapter:
         Uses integer IDs, so we format them with the index.
         """
         ccfraud_id = f"ccfraud{idx:06d}"
-        
+
+        # Skip records with missing gold labels
+        if row.get("gold") is None:
+            return None
+
         return PixiuRecord(
             pixiu_id=ccfraud_id,
             query=row["query"] + "\nText: " + row["text"],
@@ -485,6 +498,10 @@ class PixiuAdapter:
         """
         ccf_id = f"ccf{idx:06d}"
         
+        # Skip records with missing gold labels
+        if row.get("gold") is None:
+            return None
+
         return PixiuRecord(
             pixiu_id=ccf_id,
             query=row["query"] + "\nText: " + row["text"],
@@ -500,6 +517,10 @@ class PixiuAdapter:
         Uses integer IDs, so we format them with the index.
         """
         taiwan_id = f"taiwan{idx:06d}"
+
+        # Skip records with missing gold labels
+        if row.get("gold") is None:
+            return None
 
         return PixiuRecord(
             pixiu_id=taiwan_id,
@@ -652,23 +673,38 @@ class PixiuAdapter:
         if out_dir.exists():
             shutil.rmtree(out_dir)
         
-        # Use appropriate template based on task type and dataset
-        if record.is_relation_extraction:
-            template_dir = Path(__file__).parent / "template_relext"
-        elif record.is_sequence_labeling:
-            # flare-ner uses entity extraction format, others use token:label format
-            if "flare-ner" in self.dataset_name.lower():
-                template_dir = Path(__file__).parent / "template_ner"
+        # Select template based on format (Harbor vs Terminal-Bench) and task type
+        # Harbor uses only 2 templates (standard + regression), instructions generated dynamically
+        if self.use_harbor_format:
+            if record.is_regression:
+                template_dir = TEMPLATE_HARBOR_REGRESSION_DIR
             else:
-                template_dir = Path(__file__).parent / "template_seqlabel"
-        elif record.is_regression:
-            template_dir = TEMPLATE_REGRESSION_DIR
+                # All other tasks use standard template (instructions generated dynamically)
+                template_dir = TEMPLATE_HARBOR_DIR
         else:
-            template_dir = TEMPLATE_DIR
+            # Legacy Terminal-Bench format
+            if record.is_relation_extraction:
+                template_dir = Path(__file__).parent / "template_relext"
+            elif record.is_sequence_labeling:
+                if "flare-ner" in self.dataset_name.lower():
+                    template_dir = Path(__file__).parent / "template_ner"
+                else:
+                    template_dir = Path(__file__).parent / "template_seqlabel"
+            elif record.is_regression:
+                template_dir = TEMPLATE_REGRESSION_DIR
+            else:
+                template_dir = TEMPLATE_DIR
+        
         shutil.copytree(template_dir, out_dir)
 
         self._write_item_file(out_dir, record)
-        self._update_task_yaml(out_dir, record)
+        
+        if self.use_harbor_format:
+            self._update_task_toml(out_dir, record)
+            self._update_instruction_md(out_dir, record)
+        else:
+            self._update_task_yaml(out_dir, record)
+        
         self._update_solution(out_dir, record)
         self._update_tests(out_dir, record)
 
@@ -711,6 +747,7 @@ class PixiuAdapter:
         )
 
     def _update_task_yaml(self, out_dir: Path, record: PixiuRecord) -> None:
+        """Update task.yaml for Terminal-Bench format."""
         path = out_dir / "task.yaml"
         content = path.read_text()
         replacements = {
@@ -733,52 +770,457 @@ class PixiuAdapter:
             content = content.replace(key, value)
         path.write_text(content)
 
-    def _update_solution(self, out_dir: Path, record: PixiuRecord) -> None:
-        path = out_dir / "solution.sh"
+    def _update_task_toml(self, out_dir: Path, record: PixiuRecord) -> None:
+        """Update task.toml for Harbor format (metadata only, no instruction)."""
+        path = out_dir / "task.toml"
         content = path.read_text()
         
-        if record.is_relation_extraction or record.is_sequence_labeling:
-            # For relation extraction and sequence labeling, write the entire answer string
-            content = content.replace("{expected_answer}", record.expected_answer)
+        # Determine difficulty based on task type
+        if record.is_regression:
+            difficulty = "hard"
+        elif record.is_sequence_labeling or record.is_relation_extraction:
+            difficulty = "hard"
+        else:
+            difficulty = "medium"
+        
+        content = content.replace("{difficulty}", difficulty)
+        path.write_text(content)
+
+    def _create_instruction_content(self, record: PixiuRecord) -> str:
+        """Dynamically create task-specific instruction content based on dataset type.
+        
+        Similar to LiveCodeBench's _create_problem_description(), this generates
+        instructions tailored to each task type without requiring separate templates.
+        """
+        # Common header
+        instruction = f"""You are auditing a single-sample evaluation from the PIXIU FinBen benchmark.
+
+Sample metadata:
+  • PIXIU instance id: {record.pixiu_id}
+  • Task type: {record.label_type}
+"""
+        
+        # Add task-specific guidance
+        dataset_lower = self.dataset_name.lower()
+        
+        if "finqa" in dataset_lower:
+            # Financial numerical reasoning
+            instruction += f"""  • Allowed labels: {", ".join(record.choices)}
+
+This is a financial numerical reasoning task. Analyze the provided financial data, perform necessary calculations, and output the correct numerical answer.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the question and financial data.
+  2. Perform any necessary calculations or reasoning to derive the answer.
+  3. Write the final numerical answer (as a number only, no units or explanation) to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the number only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        elif "tatqa" in dataset_lower:
+            # Table-based QA
+            instruction += f"""  • Allowed labels: {", ".join(record.choices)}
+
+This is a table-based question answering task. Analyze the provided table and text, extract or infer the answer, and output it as text.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the table, context, and question.
+  2. Extract or infer the answer from the table and text.
+  3. Write the final text answer to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the answer only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        elif "fnxl" in dataset_lower:
+            # Token classification/NER
+            instruction += """  • Output format: Token:Label pairs, one per line
+
+This is a financial token classification task. For each token in the input text, assign the appropriate label in BIO format (B-TYPE, I-TYPE, or O).
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the text and label set.
+  2. For each token, determine the correct label (e.g., B-PERSON, I-ORGANIZATION, O).
+  3. Write each token-label pair to `/app/answer.txt` in the format: token:label (one per line).
+  4. Do not write any explanation; output only token:label pairs.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+
+Example output format:
+John:B-PERSON
+works:O
+at:O
+Apple:B-ORGANIZATION
+"""
+        
+        elif "fsrl" in dataset_lower:
+            # Semantic role labeling
+            instruction += """  • Output format: Token:Role pairs, one per line
+
+This is a financial semantic role labeling task. For each token, assign the appropriate semantic role (e.g., Agent, Patient, Predicate).
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the sentence and role definitions.
+  2. For each token, determine its semantic role in the financial context.
+  3. Write each token-role pair to `/app/answer.txt` in the format: token:role (one per line).
+  4. Do not write any explanation; output only token:role pairs.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        elif "ectsum" in dataset_lower:
+            # Extractive summarization
+            instruction += """  • Output format: Binary sequence (0s and 1s)
+
+This is an extractive summarization task. For each sentence in the document, output 1 if it should be included in the summary, 0 otherwise.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the document.
+  2. Determine which sentences are most important for the summary.
+  3. Write a sequence of 0s and 1s to `/app/answer.txt` (one digit per sentence, space-separated or one per line).
+  4. Do not write any explanation; output only the binary sequence.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+
+Example output (for a 5-sentence document):
+1 0 1 1 0
+"""
+        
+        elif "edtsum" in dataset_lower:
+            # Abstractive summarization
+            instruction += """  • Output format: Natural language summary
+
+This is an abstractive summarization task. Generate a coherent summary of the financial document in your own words.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the document.
+  2. Generate a concise, coherent summary that captures the key points.
+  3. Write the summary text to `/app/answer.txt`.
+  4. Do not add any metadata or explanation; output only the summary text.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        elif "flare-ner" in dataset_lower:
+            # Named entity recognition (entity extraction format)
+            instruction += """  • Output format: entity_name, entity_type (one per line)
+
+This is a named entity recognition task. Identify all entities in the text and output them with their types.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the text and entity types.
+  2. Identify all named entities (persons, organizations, locations, etc.).
+  3. Write each entity to `/app/answer.txt` in the format: entity_name, entity_type (one per line).
+  4. Do not write any explanation; output only entity pairs.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+
+Example output:
+John Smith, PERSON
+Apple Inc, ORGANIZATION
+New York, LOCATION
+"""
+        
+        elif record.is_sequence_labeling:
+            # Generic sequence labeling (finer-ord, CD)
+            instruction += """  • Output format: Token:Label pairs, one per line
+
+This is a sequence labeling task. For each token in the input sequence, assign the appropriate label.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the tokens and label set.
+  2. For each token, determine the correct label based on the task description.
+  3. Write each token-label pair to `/app/answer.txt` in the format: token:label (one per line).
+  4. Do not write any explanation; output only token:label pairs.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        elif record.is_relation_extraction:
+            # Relation extraction (FinRED)
+            instruction += """  • Output format: head ; tail ; relation (one triple per line)
+
+This is a relation extraction task. Identify all relationships between entities in the financial text.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the text and relation types.
+  2. Identify all entity pairs and the relationship between them.
+  3. Write each relation triple to `/app/answer.txt` in the format: head_entity ; tail_entity ; relation_type (one per line).
+  4. Do not write any explanation; output only relation triples.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+
+Example output:
+Apple ; Tim Cook ; CEO
+Microsoft ; Windows ; Product
+"""
+        
         elif record.is_regression:
+            # Regression (TSA)
+            score_range = f"{record.score_range[0]} to {record.score_range[1]}"
+            instruction += f"""  • Score range: {score_range}
+
+This is a regression task. Predict a numerical score within the specified range based on the input.
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the input data.
+  2. Predict a score within the range {score_range}.
+  3. Write the final score (as a decimal number) to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the score only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        else:
+            # Standard classification (most tasks)
+            # Check if any choice contains newlines (text-answer tasks like TATQA)
+            has_multiline_choices = any('\n' in choice for choice in record.choices)
+            
+            if has_multiline_choices:
+                # Format as bulleted list for multiline choices
+                choices_formatted = "\n".join(f"    - {choice}" for choice in record.choices)
+                instruction += f"""  • Allowed labels:
+{choices_formatted}
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the prompt, answer choices, and any notes.
+  2. Decide on the best label strictly from the provided choices.
+  3. Write the final label (exact string match, case sensitive) to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the label only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+            else:
+                # Format as inline comma-separated list
+                choices_inline = ", ".join(record.choices)
+                instruction += f"""  • Allowed labels: {choices_inline}
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the prompt, answer choices, and any notes.
+  2. Decide on the best label strictly from the provided choices.
+  3. Write the final label (exact string match, case sensitive) to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the label only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
+"""
+        
+        return instruction.strip() + "\n"
+
+    def _update_instruction_md(self, out_dir: Path, record: PixiuRecord) -> None:
+        """Write dynamically generated instruction content to instruction.md."""
+        path = out_dir / "instruction.md"
+        content = self._create_instruction_content(record)
+        path.write_text(content)
+
+    def _update_solution(self, out_dir: Path, record: PixiuRecord) -> None:
+        """Update solution script (location depends on format)."""
+        if self.use_harbor_format:
+            path = out_dir / "solution" / "solve.sh"
+        else:
+            path = out_dir / "solution.sh"
+        
+        content = path.read_text()
+        
+        # Check if answer has newlines (ECTSUM, EDTSUM, etc.)
+        has_multiline_answer = False
+        try:
+            label = record.expected_label
+            has_multiline_answer = label and '\n' in label
+        except ValueError:
+            # Regression or sequence labeling tasks don't have expected_label
+            pass
+        
+        # Generate solution content based on task type
+        if record.is_relation_extraction or record.is_sequence_labeling or has_multiline_answer:
+            # Multiline output - use heredoc
+            answer_text = record.expected_answer if (record.is_relation_extraction or record.is_sequence_labeling) else record.expected_label
+            solution_content = f"cat > answer.txt << 'EOF'\n{answer_text}\nEOF"
+            content = content.replace("{SOLUTION_CONTENT}", solution_content)
+            # Also handle old-style placeholders for backward compatibility
+            content = content.replace("{expected_answer}", answer_text)
+            if not (record.is_relation_extraction or record.is_sequence_labeling):
+                # Only replace expected_label for multiline classification tasks (ECTSUM, EDTSUM)
+                # Use repr() to properly quote the Python string literal
+                content = content.replace("{expected_label}", repr(record.expected_label))
+        elif record.is_regression:
+            # Escape $ and " for shell
+            escaped_score = str(record.expected_score).replace('\\', '\\\\').replace('$', '\\$').replace('"', '\\"')
+            solution_content = f'printf "%s\\n" "{escaped_score}" > answer.txt'
+            content = content.replace("{SOLUTION_CONTENT}", solution_content)
             content = content.replace("{expected_score}", str(record.expected_score))
         else:
-            content = content.replace("{expected_label}", record.expected_label)
+            # Classification - single choice
+            # Escape $ and " for shell
+            escaped_label = record.expected_label.replace('\\', '\\\\').replace('$', '\\$').replace('"', '\\"')
+            solution_content = f'printf "%s\\n" "{escaped_label}" > answer.txt'
+            content = content.replace("{SOLUTION_CONTENT}", solution_content)
+            # Use repr() to properly quote the Python string literal
+            content = content.replace("{expected_label}", repr(record.expected_label))
         
         path.write_text(content)
 
     def _update_tests(self, out_dir: Path, record: PixiuRecord) -> None:
         path = out_dir / "tests" / "test_outputs.py"
-        content = path.read_text()
         
-        replacements = {
-            "{pixiu_id}": record.pixiu_id,
-            "{label_type}": record.label_type,
-        }
-        
-        # Add task-specific placeholders
+        # For Harbor format, generate task-specific test files
+        if self.use_harbor_format and (record.is_sequence_labeling or record.is_relation_extraction):
+            # Need to replace the test file entirely for sequence labeling tasks
+            self._write_harbor_sequence_test(path, record)
+        else:
+            # Use template replacement for classification/regression
+            content = path.read_text()
+            
+            replacements = {
+                "{pixiu_id}": record.pixiu_id,
+                "{label_type}": record.label_type,
+            }
+            
+            # Add task-specific placeholders
+            if record.is_relation_extraction:
+                replacements["{expected_answer}"] = record.expected_answer
+                replacements["{num_relations}"] = str(len(record.relations))
+            elif record.is_sequence_labeling:
+                replacements["{expected_answer}"] = record.expected_answer
+                # For flare-ner, count entities; for others, count tokens
+                if "flare-ner" in self.dataset_name.lower():
+                    num_entities = len([l for l in record.labels if l.startswith('B-')])
+                    replacements["{num_entities}"] = str(num_entities)
+                else:
+                    replacements["{num_tokens}"] = str(len(record.tokens))
+            elif record.is_regression:
+                replacements["{expected_score}"] = str(record.expected_score)
+                replacements["{score_min}"] = str(record.score_range[0])
+                replacements["{score_max}"] = str(record.score_range[1])
+            else:
+                # Check if label has newlines (ECTSUM, EDTSUM, etc.) - use triple quotes
+                label = record.expected_label
+                if '\n' in label:
+                    replacements["{expected_label}"] = f'"""{label}"""'
+                else:
+                    replacements["{expected_label}"] = json.dumps(label, ensure_ascii=False)
+                replacements["{allowed_choices}"] = json.dumps(list(record.choices), ensure_ascii=False)
+            
+            for key, value in replacements.items():
+                content = content.replace(key, value)
+            path.write_text(content)
+    
+    def _write_harbor_sequence_test(self, path: Path, record: PixiuRecord) -> None:
+        """Write test file for sequence labeling/relation extraction tasks in Harbor format."""
         if record.is_relation_extraction:
-            replacements["{expected_answer}"] = record.expected_answer
-            replacements["{num_relations}"] = str(len(record.relations))
-        elif record.is_sequence_labeling:
-            replacements["{expected_answer}"] = record.expected_answer
-            # For flare-ner, count entities; for others, count tokens
+            test_content = f'''import json
+from pathlib import Path
+
+PIXIU_ID = "{record.pixiu_id}"
+LABEL_TYPE = "{record.label_type}"
+EXPECTED_ANSWER = """{record.expected_answer}"""
+NUM_RELATIONS = {len(record.relations)}
+
+ANSWER_FILE = Path("/app/answer.txt")
+ITEM_FILE = Path("/tests/data/item.json")
+
+
+def test_item_file_exists():
+    assert ITEM_FILE.exists(), f"Missing data file for PIXIU sample {{PIXIU_ID}}"
+    data = json.loads(ITEM_FILE.read_text())
+    assert data.get("id") == PIXIU_ID
+    assert data.get("label_type") == LABEL_TYPE
+
+
+def _read_answer():
+    assert ANSWER_FILE.exists(), "answer.txt was not created"
+    return ANSWER_FILE.read_text().strip()
+
+
+def test_answer_format():
+    """Check that answer has the correct format (head ; relation ; tail per line)."""
+    answer = _read_answer()
+    if not answer:
+        assert NUM_RELATIONS == 0, "Expected relations but got empty answer"
+        return
+    
+    lines = answer.strip().split('\\n')
+    assert len(lines) == NUM_RELATIONS, \\
+        f"Expected {{NUM_RELATIONS}} relations, got {{len(lines)}}"
+    
+    for i, line in enumerate(lines):
+        parts = line.split(';')
+        assert len(parts) == 3, \\
+            f"Line {{i+1}} should have format 'head ; relation ; tail': {{line!r}}"
+
+
+def test_answer_matches_reference():
+    """Check that answer matches the expected output."""
+    answer = _read_answer()
+    expected = EXPECTED_ANSWER.strip()
+    
+    # Normalize: sort lines and strip whitespace
+    answer_lines = sorted(line.strip() for line in answer.split('\\n') if line.strip())
+    expected_lines = sorted(line.strip() for line in expected.split('\\n') if line.strip())
+    
+    assert answer_lines == expected_lines, \\
+        f"Answer doesn't match expected output.\\nExpected:\\n{{expected}}\\n\\nGot:\\n{{answer}}"
+'''
+        else:
+            # Sequence labeling (NER, token classification, etc.)
             if "flare-ner" in self.dataset_name.lower():
                 num_entities = len([l for l in record.labels if l.startswith('B-')])
-                replacements["{num_entities}"] = str(num_entities)
+                count_check = f"NUM_ENTITIES = {num_entities}"
+                format_desc = "entity_text, entity_type per line"
+                format_check = '''# Each line should be entity_text, entity_type
+    for i, line in enumerate(lines):
+        assert ',' in line, \\
+            f"Line {{i+1}} doesn't have entity_text, entity_type format: {{line!r}}"
+        parts = line.split(',', 1)
+        assert len(parts) == 2, \\
+            f"Line {{i+1}} should have exactly one comma: {{line!r}}"'''
             else:
-                replacements["{num_tokens}"] = str(len(record.tokens))
-        elif record.is_regression:
-            replacements["{expected_score}"] = str(record.expected_score)
-            replacements["{score_min}"] = str(record.score_range[0])
-            replacements["{score_max}"] = str(record.score_range[1])
-        else:
-            replacements["{expected_label}"] = record.expected_label
-            replacements["{allowed_choices}"] = json.dumps(list(record.choices), ensure_ascii=False)
+                count_check = f"NUM_TOKENS = {len(record.tokens)}"
+                format_desc = "token:label per line"
+                format_check = '''# Each line should be token:label
+    for i, line in enumerate(lines):
+        assert ':' in line, \\
+            f"Line {{i+1}} doesn't have token:label format: {{line!r}}"
+        parts = line.split(':', 1)
+        assert len(parts) == 2, \\
+            f"Line {{i+1}} should have exactly one colon: {{line!r}}"'''
+            
+            test_content = f'''import json
+from pathlib import Path
+
+PIXIU_ID = "{record.pixiu_id}"
+LABEL_TYPE = "{record.label_type}"
+EXPECTED_ANSWER = """{record.expected_answer}"""
+{count_check}
+
+ANSWER_FILE = Path("/app/answer.txt")
+ITEM_FILE = Path("/tests/data/item.json")
+
+
+def test_item_file_exists():
+    assert ITEM_FILE.exists(), f"Missing data file for PIXIU sample {{PIXIU_ID}}"
+    data = json.loads(ITEM_FILE.read_text())
+    assert data.get("id") == PIXIU_ID
+    assert data.get("label_type") == LABEL_TYPE
+
+
+def _read_answer():
+    assert ANSWER_FILE.exists(), "answer.txt was not created"
+    return ANSWER_FILE.read_text().strip()
+
+
+def test_answer_format():
+    """Check that answer has the correct format ({format_desc})."""
+    answer = _read_answer()
+    if not answer:
+        return  # Empty answer is valid for some tasks
+    
+    lines = answer.strip().split('\\n')
+    {format_check}
+
+
+def test_answer_matches_reference():
+    """Check that answer matches the expected output."""
+    answer = _read_answer()
+    expected = EXPECTED_ANSWER.strip()
+    
+    # Normalize whitespace for comparison
+    answer_normalized = '\\n'.join(line.strip() for line in answer.split('\\n') if line.strip())
+    expected_normalized = '\\n'.join(line.strip() for line in expected.split('\\n') if line.strip())
+    
+    assert answer_normalized == expected_normalized, \\
+        f"Answer doesn't match expected output.\\nExpected:\\n{{expected_normalized}}\\n\\nGot:\\n{{answer_normalized}}"
+'''
         
-        for key, value in replacements.items():
-            content = content.replace(key, value)
-        path.write_text(content)
+        path.write_text(test_content)
 
     def _tbench_id(self, pixiu_id: str) -> str:
         """Generate Terminal-Bench task ID based on dataset."""
@@ -838,5 +1280,7 @@ class PixiuAdapter:
             return f"pixiu-smbigdata-{pixiu_id.lower()}"
         elif "sm-cikm" in self.dataset_name.lower():
             return f"pixiu-smcikm-{pixiu_id.lower()}"
+        elif "cra-taiwan" in self.dataset_name.lower():
+            return f"pixiu-craTW-{pixiu_id.lower()}"
         else:
             return f"pixiu-headlines-{pixiu_id.lower()}"

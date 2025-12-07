@@ -1,0 +1,13 @@
+You are auditing a single-sample evaluation from the PIXIU FinBen benchmark.
+
+Sample metadata:
+  • PIXIU instance id: cfa0
+  • Task type: answer choice
+  • Allowed labels: A, B, C
+
+Follow these rules exactly:
+  1. Read `/tests/data/item.json` to review the prompt, answer choices, and any notes.
+  2. Decide on the best label strictly from the provided choices.
+  3. Write the final label (exact string match, case sensitive) to `/app/answer.txt`.
+  4. Do not write any explanation in `answer.txt`; it must contain the label only.
+  5. Leave `/tests/data/item.json` untouched so the verifier can re-read it.
