@@ -9,7 +9,7 @@ T_BENCH_ROOT = Path(__file__).resolve().parents[2]
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate PIXIU Terminal-Bench tasks")
     parser.add_argument(
-        "--output-dir",
+        "--output-path",
         type=Path,
         default=T_BENCH_ROOT / "tasks" / "pixiu",
         help="Directory where generated tasks will be stored.",
@@ -43,13 +43,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     adapter = PixiuAdapter(
-        task_dir=args.output_dir,
+        task_dir=args.output_path,
         split=args.split,
         dataset_name=args.dataset_name,
         limit=args.limit,
     )
     written = adapter.generate_all()
-    print(f"Generated {len(written)} PIXIU tasks under {args.output_dir}")
+    print(f"Generated {len(written)} PIXIU tasks under {args.output_path}")
 
 
 if __name__ == "__main__":
