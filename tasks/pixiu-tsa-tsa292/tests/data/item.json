@@ -1,0 +1,12 @@
+{
+  "id": "tsa292",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: MillerCoors Delivers 2.9% Underlying Net Income Growth for 2014\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

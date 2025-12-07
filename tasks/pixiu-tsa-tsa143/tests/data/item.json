@@ -1,0 +1,12 @@
+{
+  "id": "tsa143",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: PRESS: Tesco Cuts 450 Jobs As Final Homeplus Stores Closed - Sky News\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

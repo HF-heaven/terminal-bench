@@ -1,0 +1,12 @@
+{
+  "id": "tsa259",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: UPDATE 3-Glencore resumes slide despite investor meeting, John Mack share purchase\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

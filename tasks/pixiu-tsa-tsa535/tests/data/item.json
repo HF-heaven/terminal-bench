@@ -1,0 +1,12 @@
+{
+  "id": "tsa535",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: U.K. Stocks Little Changed Near Record as Barclays, Shell Fall\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

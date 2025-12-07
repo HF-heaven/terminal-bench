@@ -1,0 +1,12 @@
+{
+  "id": "tsa280",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Glencore 2014 profit in line, takes $1.1 billion impairment charge on commodity ...\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

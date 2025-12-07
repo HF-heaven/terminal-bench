@@ -1,0 +1,12 @@
+{
+  "id": "tsa157",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: UPDATE 2-Warren Buffett's Berkshire Hathaway nearing deal to buy Precision ...\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

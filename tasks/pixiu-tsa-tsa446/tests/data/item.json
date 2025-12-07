@@ -1,0 +1,12 @@
+{
+  "id": "tsa446",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: News FeedFTSE 100 movers: LSE surges as ICE says mulling offer; Ashtead and Barclays tank\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

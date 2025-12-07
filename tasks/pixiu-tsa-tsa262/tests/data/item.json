@@ -1,0 +1,12 @@
+{
+  "id": "tsa262",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: London Stock Exchange Group appoints Royal Mail's Donald Brydon to replace ...\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

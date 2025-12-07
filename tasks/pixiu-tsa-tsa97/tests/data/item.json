@@ -1,0 +1,12 @@
+{
+  "id": "tsa97",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: 3 Reasons Why Lloyds Banking Group PLC Is Worthy Of A Place In Your ISA\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

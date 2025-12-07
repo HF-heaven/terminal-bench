@@ -52,8 +52,21 @@
                 "std_error": 0.0
             }
         ]
+    },
+    {
+        "adapter_name": "pixiu-flare-tsa",
+        "agent": "oracle",
+        "model": "ground-truth",
+        "date": "2025-12-01",
+        "notes": "Oracle agent verification: all 561 flare-tsa tasks. TSA uses continuous sentiment scores (-1 to 1) discretized into 3 classes: negative (<-0.33), neutral (-0.33 to 0.33), positive (>0.33).",
+        "benchmark_reference": "Terminal-Bench oracle agent with solution.sh",
+        "metrics": [
+            {
+                "benchmark_name": "Terminal-Bench Adapter",
+                "metric_name": "accuracy",
+                "value": 1.0,
+                "std_error": 0.0
+            }
+        ]
     }
 ]
-
-
-

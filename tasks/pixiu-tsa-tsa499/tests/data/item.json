@@ -1,0 +1,12 @@
+{
+  "id": "tsa499",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Merged LSE and Deutsche BÃ¶rse would be led by Germany's Kengeter\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}

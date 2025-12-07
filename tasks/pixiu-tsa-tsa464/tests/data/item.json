@@ -1,0 +1,12 @@
+{
+  "id": "tsa464",
+  "label_type": "sentiment",
+  "query": "Analyze the sentiment of the following financial text. Classify it as negative, neutral, or positive.\nText: Shropshire and Mid Wales trains to be hit again in new strike by Arriva drivers\nAnswer:",
+  "choices": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "dataset": "TheFinAI/flare-tsa",
+  "split": "test"
+}
